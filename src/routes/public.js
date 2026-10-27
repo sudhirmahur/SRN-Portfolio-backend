@@ -70,6 +70,7 @@ site.get(
         profile: profile || {},
         pages,
         theme: req.portfolio.theme,
+        template: req.portfolio.template || 'classic',
         portfolio: { slug: req.portfolio.slug },
       },
     });

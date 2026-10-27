@@ -5,7 +5,8 @@ import { createAdminCrud, pick, cleanFiles, assertId } from '../utils/crud.js';
 import { deleteRemovedFiles, plain } from '../utils/cloud.js';
 import { slugify, RESERVED_SLUGS } from '../utils/slugify.js';
 
-import Portfolio, { PORTFOLIO_FIELDS } from '../models/Portfolio.js';
+import Portfolio, { PORTFOLIO_FIELDS, PORTFOLIO_TEMPLATES } from '../models/Portfolio.js';
+import Resume from '../models/Resume.js';
 import Profile, { PROFILE_FIELDS } from '../models/Profile.js';
 import Page, { PAGE_BUILTIN_FIELDS, PAGE_CUSTOM_FIELDS } from '../models/Page.js';
 import Project, { PROJECT_FIELDS } from '../models/Project.js';
@@ -68,6 +69,10 @@ router.put(
       portfolio.slug = wanted;
     }
     if (typeof data.published === 'boolean') portfolio.published = data.published;
+    if (data.template !== undefined) {
+      if (!PORTFOLIO_TEMPLATES.includes(data.template)) throw new HttpError(400, 'Unknown portfolio template');
+      portfolio.template = data.template;
+    }
 
     if (data.theme && typeof data.theme === 'object') {
       const theme = pick(data.theme, ['enabled', 'accent', 'bg', 'text', 'headingFont', 'bodyFont']);
@@ -81,6 +86,31 @@ router.put(
 
     await portfolio.save();
     res.json({ success: true, data: portfolio });
+  })
+);
+
+/* -------------------------------- resume -------------------------------- */
+router.get(
+  '/resume',
+  asyncHandler(async (req, res) => {
+    const resume = await Resume.findOne({ owner: req.admin._id });
+    res.json({ success: true, data: resume ? { template: resume.template, data: resume.data } : null });
+  })
+);
+
+router.put(
+  '/resume',
+  asyncHandler(async (req, res) => {
+    const { template, data } = req.body || {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new HttpError(400, 'Resume data is required');
+    const resume = (await Resume.findOne({ owner: req.admin._id })) || new Resume({ owner: req.admin._id });
+    const before = plain(resume).data || {};
+    if (typeof template === 'string' && template.trim()) resume.template = template.trim().slice(0, 60);
+    resume.data = cleanFiles(data);
+    resume.markModified('data');
+    await resume.save();
+    await deleteRemovedFiles(before, resume.data);
+    res.json({ success: true, data: { template: resume.template, data: resume.data } });
   })
 );
 

@@ -14,6 +14,7 @@ import SkillCategory from '../models/SkillCategory.js';
 import Education from '../models/Education.js';
 import Certification from '../models/Certification.js';
 import Message from '../models/Message.js';
+import Resume from '../models/Resume.js';
 
 const router = express.Router();
 router.use(protect, requireSuperAdmin);
@@ -96,6 +97,12 @@ router.delete(
         )
       );
       await portfolio.deleteOne();
+    }
+    const resume = await Resume.findOne({ owner: admin._id });
+    if (resume) {
+      const files = collectFiles(plain(resume).data);
+      await Promise.all([...files.entries()].map(([id, type]) => deleteCloudFile(id, type)));
+      await resume.deleteOne();
     }
     await admin.deleteOne();
     res.json({ success: true, message: 'User and their portfolio were deleted' });

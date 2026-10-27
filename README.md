@@ -56,3 +56,13 @@ Jab koi image replace/delete hoti hai ya item delete hota hai, Cloudinary se pur
 ## 3. Deploy (Render / Railway)
 - Build command: `npm install`, Start command: `npm start`
 - Saari `.env` values dashboard me environment variables me daalo, `NODE_ENV=production`, `CLIENT_URL` = deployed frontend URL.
+
+## New in this version: resume builder + portfolio templates
+
+- `GET /api/admin/resume` / `PUT /api/admin/resume` — one saved resume per user (`{ template, data }`). Removed Cloudinary photos are cleaned up automatically.
+- `PUT /api/admin/portfolio` now accepts `template` (`classic | brooklyn | brandon | howard | tejas | alejandro | roton | john | agency | crimson`; the 4 ids from the previous release are still accepted). Old portfolios default to `classic`.
+- `GET /api/p/:slug/site` now also returns `template`.
+- Deleting a user (super admin) also deletes their resume and its files.
+- No new environment variables, no new npm packages.
+
+**Deploy order:** deploy this backend (Render) first, then the frontend (Vercel).
